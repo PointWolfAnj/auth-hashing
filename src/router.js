@@ -9,12 +9,16 @@ const router = express.Router();
 const jwtSecret = 'mysecretkey';
 
 router.post('/register', async (req, res) => {
-    const { username, password } = req.body;
+    
+    const username = req.body.username;
+    const password = req.body.password;
+
+    const hashedPassword = await bcrypt.hash(password, 10)
 
     const createdUser = await prisma.user.create({
         data: {
-            username,
-            password
+            username: username,
+            password: hashedPassword
         }
     });
 
@@ -34,8 +38,7 @@ router.post('/login', async (req, res) => {
         return res.status(401).json({ error: 'Invalid username or password.' });
     }
 
-    const passwordsMatch = password === foundUser.password;
-
+    const passwordsMatch = await bcrypt.compare(password, foundUser.password)
     if (!passwordsMatch) {
         return res.status(401).json({ error: 'Invalid username or password.' });
     }
@@ -45,4 +48,4 @@ router.post('/login', async (req, res) => {
     res.json({ data: token });
 });
 
-module.exports = router;
+module.exports = router
